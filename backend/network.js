@@ -155,7 +155,6 @@ global.network = {
       if (this.allow_to_send) {
         zlib.deflate(update_soldier_send_buf.buffer, function(err, buffer) {
           network.bytes_sent += buffer.byteLength;
-          // console.log ( buffer );
           network.io.emit("update_soldier", buffer);
         });
       } else {
