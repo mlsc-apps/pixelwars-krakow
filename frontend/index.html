@@ -1,0 +1,118 @@
+<html>
+<head>
+  <title>PixelWars | Game</title>
+  <link rel="Shortcut icon" href="icons/fist.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,700">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/106/three.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="css/modal.css">
+  <link rel="stylesheet" type="text/css" href="css/pixelwars.css">
+  <link rel="stylesheet" type="text/css" href="css/tooltip.css">
+
+  <meta name="viewport" content="minimal-ui, width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <script src="lib/modal.js"></script>
+  <!-- <script src="lib/three.min.js"></script> -->
+  <script src="lib/OrbitControls.js"></script>
+  <!-- <script src="lib/stats.js"></script> -->
+  <script src="lib/Arrow.js"></script>
+  <script src="js/controller.js"></script>
+  <!-- <script src="js/clock.js"></script> -->
+  <script src="js/audio.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/soldier.js"></script>
+  <script src="js/bullet.js"></script>
+  <script src="js/plane.js"></script>
+  <!-- <script src="js/chat.js"></script> -->
+  <script src="js/orders.js"></script>
+  <script src="js/loop.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/network.js"></script>
+  <!-- <script src="js/standings.js"></script> -->
+  <script src="js/standingsmin.js"></script>
+  <script src="js/main.js"></script>
+  <script src="lib/socket.io.js"></script>
+  <script src="lib/inflate.min.js"></script>
+
+  <style  type="text/css">
+    body { margin: 0px; }
+    /* canvas { width: 100%; height: 100% } */
+  </style>
+  <!-- Global site tag (gtag.js) - Google Ads: 974564003 -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=AW-974564003"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'AW-974564003');
+    gtag('config', 'UA-50343135-6');
+  </script> -->
+</head>
+<body>
+
+<div id="container"></div>
+
+<div><a id="info-modal-o" href="#info-modal"></a></div>
+<div class="info-wrapper">
+<div id="info-modal" class="modal center-align modal-font transparent center"></div>
+</div>
+
+<div><a id="howtoplay-modal-o" href="#howtoplay-modal"></a></div>
+<div id="howtoplay-modal" class="modal center center-align modal-font fat transparent">
+  <table class="howtoplay">
+        <tr><td>Left Mouse</td><td>Move soldiers</td></tr>
+        <tr><td>Longpress Left Mouse</td><td>Move camera</td></tr>
+        <tr><td>Longpress Right Mouse</td><td>Rotate camera</td></tr>
+        <tr><td>Mouse Wheel / Two-finger pinch</td><td>Zoom in/out</td></tr>
+        <tr><td>SPACE</td><td>Reset camera</td></tr>
+        <tr><td>S</td><td>Toggle sound on/off</td></tr>
+        <tr><td>M</td><td>Toggle music on/off</td></tr>
+        <tr><td>G</td><td>Toggle grid on/off</td></tr>
+        <tr><td>Select and deselect unit</td><td>Launch missile</td></tr>
+        <tr><td>When you see this sign <img src='icons/airsupport.png' width=20px height=20px /></td></tr>
+        <tr><td>Select unit - wait 3 sec - deselect unit</td><td>Call air support</td></tr>
+  </table>
+      <p>Contact:<br>
+      <a href="mailto:contact@pixel-wars.com" style="color: #0066ff">contact@pixel-wars.com</a><br>
+      <p>Music:<br>
+      soundcloud.com/sergenarcissoff<br>
+      bensound.com<br>
+      purple-planet.com<br>
+      <p>Sounds:<br>
+      zapsplat.com
+</div>
+
+<div id="viewport" class="camera-cursor">
+<div id="resultsheader" class="standingsmin">
+  <table id="standingsmintable" class="standingsmintable">
+  <tr>
+  <td width="100px"><div id="standingsmin-p1"></div></td>
+  <td><div id="standingsmin-p1c"></div></td>
+  <td width="24px"><div id="standingsmin-p1air"></div></td>
+  <td><div id="standingsmin-p1p"></div></td>
+  <td width="100px"><div id="standingsmin-time"></div></td>
+  <td><div id="standingsmin-p2p"></div></td>
+  <td width="24px"><div id="standingsmin-p2air"></div></td>
+  <td><div id="standingsmin-p2c"></div></td>
+  <td width="100px"><div id="standingsmin-p2"></div></td>
+</tr>
+</table>
+</div>
+<div class="floatingbuttons">
+<a href="#" id="grid_button" onclick="render.toggle_grid();"><i id="grid_floating_button" class="material-icons menu-item floatingbutton">grid_on</i></a><span></span>
+<a href="#howtoplay-modal" id="howtoplay_button"  rel="modal:open"><i class="material-icons menu-item floatingbutton">help_center</i></a><span></span>
+<a href="#" id="music_button" onclick="render.toggle_music(); render.toggle_sound();"><i id="music_floating_button" class="material-icons menu-item floatingbutton">music_note</i></a>
+</div>
+</div>
+
+<div id="loading" class="loading-class">
+  <img class="loading-img" src="icons/loading.gif" />
+  <!-- <p>
+    Loading...
+  <p> -->
+</div>
+<script src="js/utils.js"></script>
+</body>
+</html>
