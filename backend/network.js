@@ -138,10 +138,8 @@ global.network = {
       if (insec) {
         this.bytes_left = this.max_bytes_sent - this.bytes_sent;
         this.allow_to_send = this.bytes_left > 0;
-        // if (!this.allow_to_send) console.log(this.bytes_sent, this.max_bytes_sent);
       }
       if (!(insec && this.allow_to_send)) {
-        // console.log( this.bytes_sent, network.d_bytes_sent, (this.bytes_sent+network.d_bytes_sent) / 1024);
         this.d_bytes_sent = 0;
         this.bytes_sent = 0;
         this.last_global_time = global_time;
@@ -179,7 +177,6 @@ global.network = {
         if (this.allow_to_send && bullets_new_buf_index > 0) {
             if (bullets_new_buf_index < bullets_new_buf.length) bullets_new_buf.fill(0, bullets_new_buf_index);
             network.io.emit("create_bullets", bullets_new_buf);
-            // console.log(bullets_new_buf);
             network.d_bytes_sent += bullets_new_buf.byteLength;
         }
         bullets_new_buf_index = 0;
@@ -194,9 +191,7 @@ global.network = {
       this.process_queue(update_player_sendq, "update_player");
       this.process_queue(update_time_sendq,   "update_time");
 
-      // this.process_queue(create_player_sendq,  "create_player");
       update_player_sendq = {};
-      // create_player_sendq.length = 0;
       update_time_sendq = {};
 
       if (send_game_state) {
@@ -209,8 +204,6 @@ global.network = {
 
     reset : function() {
       update_player_sendq = {};
-      // create_player_sendq = [];
-      // create_soldier_sendq = [];
       update_time_sendq = {};
       orders_receiveq = [];
       soldiers_dead_buffer.fill(0);
