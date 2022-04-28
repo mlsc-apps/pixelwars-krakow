@@ -253,7 +253,7 @@ module.exports = {
 
   rest_api_root : "https://pixel-wars.com/wp-json",
   rest_api_extended : "/extended/robot/",
-  auth : { 'Authorization': 'Basic ' + b64.encode('admin:vn4i VVV2 Rar4 2oBi RFn7 CVbc'),
+  auth : { 'Authorization': 'Basic ' + b64.encode(process.env.ADMIN_KEY),
            'Content-Type': 'application/json'
          },
 
