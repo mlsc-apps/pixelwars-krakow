@@ -1,0 +1,44 @@
+name: px-node cicd pipeline
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/pixelwars:latest
+
+    steps:
+    - name: Login
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_email: ${{ secrets.GCP_EMAIL }}
+        service_account_key: ${{ secrets.SA_KEY }}
+
+    - name: Configure Docker
+      run: gcloud auth configure-docker --quiet
+    
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 10.x  
+
+    - run: npm install && npm test
+    - run: cd build/base && docker build . -t pixelwars-base:latest
+    - run: cd build && docker build . -t $IMAGE_NAME
+    - run: docker push $IMAGE_NAME
+
+    - name: Create kubectl context
+      run: gcloud container clusters get-credentials px-cluster --zone=europe-central2-a
+
+    - name: Run Terraform 
+      run: cd gcp/deploy && terraform init && terraform apply -auto-approve

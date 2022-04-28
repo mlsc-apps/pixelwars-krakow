@@ -258,7 +258,6 @@ module.exports = {
          },
 
   update_record : function(games, wins, record, player) {
-    // console.log(new Date() + `: Updating user with wins: ${wins}, games: ${games}, record: ${record} `);
     fetch(`${this.rest_api_root}/wp/v2/users/${player.id}`, {
       method: 'POST',
       headers: this.auth,
