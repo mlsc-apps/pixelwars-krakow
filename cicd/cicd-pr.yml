@@ -1,14 +1,14 @@
-name: px-node cicd pipeline
+name: px-node cicd pr pipeline
 
 on:
   pull-request:
     branches: [ master ]
 
 jobs:
-  deploy:
+  build:
 
     runs-on: ubuntu-latest
-        
+
     - name: Checkout
       uses: actions/checkout@v3
 
