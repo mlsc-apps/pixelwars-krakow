@@ -3,83 +3,84 @@ let order = {
   around : [ [1,-1], [1,1], [-1,-1], [-1,1] ],
   cursor : 5,
   chosen : [],
-  last_order_sent : null,
-  click_time : null,
+  lastOrderSent : null,
+  clickTime : null,
 
-  order_to : function() {
-    if (click_coords) {
-      this.to = click_coords;
+  orderTo : function() {
+    if (clickCoords) {
+      this.to = clickCoords;
       this.chosen.forEach( (s) => {
             s.color.set(s.player.color);
-            let xingrid = s.x - (s.fx * select_grid);
-            let zingrid = s.z - (s.fz * select_grid);
-            let tx = (~~(this.to.x / select_grid) * select_grid) + xingrid;
-            let tz = (~~(this.to.z / select_grid) * select_grid) + zingrid;
+            let xingrid = s.x - (s.fx * selectGrid);
+            let zingrid = s.z - (s.fz * selectGrid);
+            let tx = (~~(this.to.x / selectGrid) * selectGrid) + xingrid;
+            let tz = (~~(this.to.z / selectGrid) * selectGrid) + zingrid;
 
             s.tx = tx;
             s.tz = tz;
             s.ty = 0;
-            s.order_x = s.x;
-            s.order_z = s.z;
-            s.current_action = s.move_to;
+            s.orderX = s.x;
+            s.orderZ = s.z;
+            s.currentAction = s.moveTo;
 
             // Send planes
             let now = Date.now();
-            let ftx = ~~(this.to.x / select_grid);
-            let ftz = ~~(this.to.z / select_grid);
-            if ( (now - this.click_time) > 3000 && s.fx === ftx && s.fz === ftz && !s.player.sent_planes && s.player.air_strike_ready) {
-              send_planes_sid = s.id;
+            let ftx = ~~(this.to.x / selectGrid);
+            let ftz = ~~(this.to.z / selectGrid);
+            if ( (now - this.clickTime) > 3000 && s.fx === ftx && s.fz === ftz && !s.player.sentPlanes && s.player.airStrikeReady
+            ) {
+              sendPlanesSid = s.id;
             } else {
-              orders_to_server.push(s.id, tx, tz);
+              ordersToServer.push(s.id, tx, tz);
             }
 
       });
-      if (this.chosen.length > 0) { audio_play.push('ack') };
+      if (this.chosen.length > 0) { audioPlay.push('ack') };
       this.chosen.length = 0;
-      sent_order = this.from;
-      this.current_state = this.wait_for_click;
-      click_coords = null;
-      this.last_order_sent = Date.now();
+      sentOrder = this.from;
+      this.currentState = this.waitForClick;
+      clickCoords = null;
+      this.lastOrderSent = Date.now();
     }
   },
 
   wait_for_click : function() {
-    if (this.last_order_sent && (Date.now() - this.last_order_sent < 400)) {
-      click_coords = null;
+    if (this.lastOrderSent && (Date.now() - this.lastOrderSent < 400)) {
+      clickCoords = null;
       return;
     }
 
-    if (click_coords) {
+    if (clickCoords) {
       this.chosen.length = 0;
-      this.click_time = Date.now();
-      if (this.click_time - click_time_start < 300) {
+      this.clickTime = Date.now();
+      if (this.clickTime - clickTimeStart < 300) {
         for (var i = 0; i < this.around.length; i++) {
-          let ss = gridmap_get(click_coords.x + (this.around[i][0] * this.cursor), click_coords.z + (this.around[i][1] * this.cursor));
+          let ss = gridmapGet(clickCoords.x + (this.around[i][0] * this.cursor), clickCoords.z + (this.around[i][1] * this.cursor));
           if (ss) {
             ss.forEach( (sb) => {
               if (sb && sb.player.id === me) {
-                if (this.chosen.indexOf(sb) === -1 && (this.chosen.length < max_players_update)) {
+                if (this.chosen.indexOf(sb) === -1 && (this.chosen.length < maxPlayersUpdate)) {
                   this.chosen.push(sb);
-                  sb.current_action = sb.blink_out;
+                  sb.currentAction = sb.blinkOut;
                 }
               }
             });
           }
         }
 
-        this.from = click_coords;
-        this.current_state = this.order_to;
+        this.from = clickCoords;
+        this.currentState = this.orderTo;
       }
-      click_coords = null;
+      clickCoords = null;
     }
   },
 
   init : function(){
-    this.current_state = this.wait_for_click;
+    this.currentState = this.waitForClick;
   },
 
   update : function() {
-    if (to_go && me) this.current_state();
+    if (toGo && me) this.currentState();
   }
 
 }

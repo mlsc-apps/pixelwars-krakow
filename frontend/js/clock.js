@@ -1,7 +1,7 @@
-let to_go = null;
-let to_go_remote = null;
+let toGo = null;
+let toGoRemote = null;
 
-let clock = {
+const Clock = {
 
   wait : 0,
 
@@ -9,9 +9,9 @@ let clock = {
     this.wait += dt;
     if (this.wait > 1) {
       this.wait = 0;
-      if (to_go_remote) {
-        to_go = to_go_remote.time;
-        to_go_remote = null;
+      if (toGoRemote) {
+        toGo = toGoRemote.time;
+        toGoRemote = null;
       }
     }
   }

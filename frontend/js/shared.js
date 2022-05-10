@@ -1,88 +1,83 @@
-let ws_port   = 1337;
-let http_port = 3000;
-let ws_host = null;
+let wsPort   = 1337;
+let httpPort = 3000;
+let wsHost = null;
 
 let me = null;
-let new_players = [];
-let check_if_player = [];
-let standing   = [];
-let players = {};
-let soldiers  = {};
-let fightmap = {};
+let newPlayers    = [];
+let checkIfPlayer = [];
+let standing      = [];
+let players       = {};
+let soldiers      = {};
+let fightmap      = {};
 
-let vertexgrid = {};
-let vertex_index = [];
-let soldiers_dead = [];
-let soldiers_new  = [];
-let pc_index = 0;
+let vertexgrid   = {};
+let vertexIndex  = [];
+let soldiersDead = [];
+let soldiersNew  = [];
+let pcIndex = 0;
 
 let mouse    = {};
 let orders   = [];
 let around   = [];
 let chosen   = [];
 
-let segments_x = 0;
-let segments_y = 0;
-let gridsize_X = 1.5;
-let gridsize_Y = 1.5;
-let scale_y = 0.25;
+let segmentsX = 0;
+let segmentsY = 0;
+let gridsizeX = 1.5;
+let gridsizeY = 1.5;
+let scaleY    = 0.25;
 
-// let musicon = true;
+let ordersToServer        = [];
+let sUpdatesFromServer    = {};
+let sUpdatesFromServerIds = [];
+let sUpdatesFromServerQ    = [];
+let pUpdatesFromServer     = {};
+let sDeadUpdatesFromServer = {};
+let ackSend = false;
 
-let orders_to_server = [];
-let s_updates_from_server = {};
-let s_updates_from_server_ids = [];
-let s_updates_from_server_q = [];
-let p_updates_from_server = {};
-let s_dead_updates_from_server = {};
-let ack_send = false;
-
-let send_chat_msg = null;
+let sendChatMsg = null;
 let chats = {};
-let openchat_pid = null;
-let chat_pid_opened = null;
+let openchatPid = null;
+let chatPidOpened = null;
 
 let scale = 5;
 
 let loop = null;
-let reset_controls = false;
-let sent_order = null;
-let select_grid = 40;
+let resetControls = false;
+let sentOrder = null;
+let selectGrid = 40;
 
 let mindex = 0;
 let controls = null;
 let camera = null;
 
 let colors = [new THREE.Color(0x0000ff), new THREE.Color(0xff0000)];
-let white = new THREE.Color(0xffffff);
+let white  = new THREE.Color(0xffffff);
 
-let world_tick = 0;
-let world_dead_tick = 0;
-let client_tick = 0;
-let global_time = 0;
-let max_players_update = 1000;
+let worldTick = 0;
+let worldDeadTick = 0;
+let clientTick = 0;
+let globalTime = 0;
+let maxPlayersUpdate = 1000;
 
-let max_launch_delay = 3000;
+let maxLaunchDelay = 3000;
 
-let to_go = null;
+let toGo = null;
 
-let max_planes = 5;
-let send_planes_sid = null;
+let maxPlanes = 5;
+let sendPlanesSid = null;
 
 function parsePlayerFromBuffer(data) {
     let p = {};
     p.id  = data.getUint32(0);
     p.population = parseInt(data.getUint16(4));
-    p.nick = String.fromCharCode.apply(null, new Uint8Array(data.buffer).slice(6 + data.byteOffset, 16 + data.byteOffset));
+    p.nick    = String.fromCharCode.apply(null, new Uint8Array(data.buffer).slice(6 + data.byteOffset, 16 + data.byteOffset));
     p.country = String.fromCharCode.apply(null, new Uint8Array(data.buffer).slice(16 + data.byteOffset, 18 + data.byteOffset));
-    p.robot = data.getUint8(18);
+    p.robot  = data.getUint8(18);
     p.roomid = data.getUint8(19);
-    p.color = colors[p.roomid];
-    p.new_mail = false;
-    p.local_population = 0;
-
-
-    // console.log(p);
+    p.color  = colors[p.roomid];
+    p.newMail = false;
+    p.localPopulation = 0;
     return p;
 }
 
@@ -104,25 +99,24 @@ function parseBulletFromBuffer(data) {
 }
 
 function parseSoldiersFromBuffer(data, player) {
-  for (var i = 0; i < data.byteLength; i+=bytes_per_soldier) {
-      parseSoldierFromBuffer(new DataView(data.buffer, data.byteOffset + i, bytes_per_soldier), player);
+  for (var i = 0; i < data.byteLength; i+=bytesPerSoldier) {
+      parseSoldierFromBuffer(new DataView(data.buffer, data.byteOffset + i, bytesPerSoldier), player);
     }
 }
 
 function add_planes(p) {
-  for (var i = 0; i < max_planes; i++) {
+  for (var i = 0; i < maxPlanes; i++) {
     let plane = Object.create(Plane);
-    plane.init((p.roomid * max_planes) + i + 1, p, (i * 2 * select_grid) + (select_grid / 2), 0, (p.roomid * 600) + (p.roomid === 0 ? -40 : 40));
-    // console.log ( plane );
+    plane.init((p.roomid * maxPlanes) + i + 1, p, (i * 2 * selectGrid) + (selectGrid / 2), 0, (p.roomid * 600) + (p.roomid === 0 ? -40 : 40));
   }
 }
 
 function get_y(x, z) {
-  let px = ~~(x / gridsize_X);
-  let pz = ~~(z / gridsize_Y);
+  let px = ~~(x / gridsizeX);
+  let pz = ~~(z / gridsizeY);
 
-  let rx = (x - (px * gridsize_X)) / gridsize_X;
-  let rz = (z - (pz * gridsize_Y)) / gridsize_Y;
+  let rx = (x - (px * gridsizeX)) / gridsizeX;
+  let rz = (z - (pz * gridsizeY)) / gridsizeY;
 
   if (!vertexgrid[px]) return null;
   let vs = vertexgrid[px][pz];
@@ -150,11 +144,11 @@ function get_y(x, z) {
   return yy;
 }
 
-function position_lerp (min, max) {
+function positionLerp (min, max) {
    return ((max - min) / 2) + min;
 }
 
-function create_vertexgrid(x, z) {
+function createVertexgrid(x, z) {
   if (!vertexgrid[x]) vertexgrid[x] = {};
   if (!vertexgrid[x][z]) vertexgrid[x][z] = {};
   return vertexgrid[x][z];
@@ -167,9 +161,9 @@ function pop(array, e) {
   }
 }
 
-function maps_set(s) {
-  let x = ~~(s.x / select_grid);
-  let z = ~~(s.z / select_grid);
+function mapsSet(s) {
+  let x = ~~(s.x / selectGrid);
+  let z = ~~(s.z / selectGrid);
   if (soldiers[x] == null) soldiers[x] = {};
   if (soldiers[x][z] == null) soldiers[x][z] = [];
   soldiers[x][z].push(s);
@@ -181,34 +175,34 @@ function maps_set(s) {
 
   if (!fightmap[s.fix]) fightmap[s.fix] = {};
   if (!fightmap[s.fix][s.fiz]) fightmap[s.fix][s.fiz] = [];
-  fightmap[s.fix][s.fiz].push(s); // = s; /// = s;
+  fightmap[s.fix][s.fiz].push(s);
 }
 
-function gridmap_get(x, z) {
-  x = ~~(x / select_grid);
-  z = ~~(z / select_grid);
+function gridmapGet(x, z) {
+  x = ~~(x / selectGrid);
+  z = ~~(z / selectGrid);
   return soldiers[x] && soldiers[x][z];
 }
 
-function fightmap_get(x, z) {
+function fightmapGet(x, z) {
   x = ~~(x);
   z = ~~(z);
   return fightmap[x] && fightmap[x][z];
 }
 
-function maps_del(s) {
+function mapsDel(s) {
    pop(soldiers[s.fx][s.fz], s);
    fightmap[s.fix][s.fiz] = null;
 }
 
-function buffers_set(s) {
-  positionsbuffer[pc_index] = s.x;
-  positionsbuffer[pc_index+1] = 0; //s.y;
-  positionsbuffer[pc_index+2] = s.z;
-  colorsbuffer[pc_index] = s.color.r;
-  colorsbuffer[pc_index+1] = s.color.g;
-  colorsbuffer[pc_index+2] = s.color.b;
-  pc_index+=3;
+function buffersSet(s) {
+  positionsbuffer[pcIndex] = s.x;
+  positionsbuffer[pcIndex+1] = 0; //s.y;
+  positionsbuffer[pcIndex+2] = s.z;
+  colorsbuffer[pcIndex] = s.color.r;
+  colorsbuffer[pcIndex+1] = s.color.g;
+  colorsbuffer[pcIndex+2] = s.color.b;
+  pcIndex+=3;
 }
 
 function ra(a) {

@@ -1,13 +1,13 @@
   window.onload = function() {
 
-    gameloop.go_add("orders", order);
-    gameloop.go_add("render", render);
-    gameloop.go_add("standingsmin", standingsmin);
-    gameloop.go_add("network", network);
-    gameloop.go_add("audio", audio);
-    gameloop.go_add("controller", controller);
+    gameLoop.goAdd("orders", order);
+    gameLoop.goAdd("render", render);
+    gameLoop.goAdd("standingsmin", standingsmin);
+    gameLoop.goAdd("network", network);
+    gameLoop.goAdd("audio", audio);
+    gameLoop.goAdd("controller", controller);
 
-    gameloop.init();
-    gameloop.start();
+    gameLoop.init();
+    gameLoop.start();
 
   }

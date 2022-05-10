@@ -251,14 +251,14 @@ global.isoCountries = {
 
 module.exports = {
 
-  rest_api_root : "https://pixel-wars.com/wp-json",
-  rest_api_extended : "/extended/robot/",
+  restApiRoot : "https://pixel-wars.com/wp-json",
+  restApiExtended : "/extended/robot/",
   auth : { 'Authorization': 'Basic ' + b64.encode(process.env.ADMIN_KEY),
            'Content-Type': 'application/json'
          },
 
-  update_record : function(games, wins, record, player) {
-    fetch(`${this.rest_api_root}/wp/v2/users/${player.id}`, {
+  updateRecord : function(games, wins, record, player) {
+    fetch(`${this.restApiRoot}/wp/v2/users/${player.id}`, {
       method: 'POST',
       headers: this.auth,
       body : JSON.stringify({
@@ -273,8 +273,8 @@ module.exports = {
     .then(json => console.log(new Date() + `: Updated ${player.nick} with ${wins.toString()}/${games.toString()} (${record.toFixed(3)})`) );
   },
 
-  find_robot : function(except, process_result) {
-    let url = this.rest_api_root + this.rest_api_extended;
+  findRobot : function(except, process_result) {
+    let url = this.restApiRoot + this.restApiExtended;
     url = except ? url + except : url;
     console.log(new Date() + `: Find robot at ${url}`);
     fetch(url, {
@@ -288,8 +288,8 @@ module.exports = {
     });
   },
 
-  load_player : function(id, process_result) {
-    fetch(`${this.rest_api_root}/wp/v2/users/${id}`, {
+  loadPlayer : function(id, process_result) {
+    fetch(`${this.restApiRoot}/wp/v2/users/${id}`, {
       headers: this.auth,
     })
     .then(res => res.json())

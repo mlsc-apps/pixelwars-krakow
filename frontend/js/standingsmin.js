@@ -25,7 +25,7 @@ let standingsmin = {
   },
 
   update : function(dt) {
-    if (to_go !== null) this.timecell.innerHTML = ~~(to_go / 60) + ":" + ((to_go % 60) < 10 ? "0" + (to_go % 60) : (to_go % 60));
+    if (toGo !== null) this.timecell.innerHTML = ~~(toGo / 60) + ":" + ((toGo % 60) < 10 ? "0" + (toGo % 60) : (toGo % 60));
     let pp = Object.values(players);
     for (i=0; i < pp.length; i++) {
          let p = pp[i];
@@ -37,16 +37,16 @@ let standingsmin = {
          }
          if (this.p[p.roomid].c.innerHTML === '') this.p[p.roomid].c.innerHTML = "<img id='" + p.id + "' src='https://flagcdn.com/w40/" + p.country.toLowerCase() + ".png' width=25px height=19px onerror='inoflag(this);'>";
 
-       if (s_updates_from_server[client_tick]) {
-         p.population = s_updates_from_server[client_tick][i];
+       if (sUpdatesFromServer[clickTick]) {
+         p.population = sUpdatesFromServer[clickTick][i];
        }
        this.p[p.roomid].p.innerHTML = p.population;
 
        if (pp.length === 2) {
-         let opponent_pop = i === 0 ? pp[1].population : pp[0].population;
-         let opponent_gap = opponent_pop * 0.1;
-         p.air_strike_ready = (opponent_pop - p.population) > opponent_gap && p.population > 500;
-         this.p[p.roomid].air.innerHTML = (p.air_strike_ready && !p.sent_planes) ? "<img src='icons/airsupport.png' width=19px height=19px />" : ' ';
+         let opponentPop = i === 0 ? pp[1].population : pp[0].population;
+         let opponentGap = opponentPop * 0.1;
+         p.airStrikeReady = (opponentPop - p.population) > opponentGap && p.population > 500;
+         this.p[p.roomid].air.innerHTML = (p.airStrikeReady && !p.sentPlanes) ? "<img src='icons/airsupport.png' width=19px height=19px />" : ' ';
        }
     }
 

@@ -1,29 +1,29 @@
 const usage = require('cpu-percentage');
 const v8 = require('v8');
 
-global.usage_warning = false;
+global.usageWarning = false;
 
-let cpu_max = 85;
-let heap_max = 1500000000; //1.4Gb
+let cpuMax = 85;
+let heapMax = 1500000000; //1.4Gb
 
 module.exports = {
 
   wait : 0,
 
   init : function() {
-    this.start_usage = usage();
+    this.startUsage = usage();
   },
 
   update : function(dt) {
     if ((this.wait += dt) > 3) {
       this.wait = 0;
       let mem = process.memoryUsage();
-      let cpu_warning  = usage(this.start_usage).percent > cpu_max;
-      let heap_warning = mem.rss > heap_max;
-      usage_warning = cpu_warning || heap_warning;
-      if (usage_warning) {
-        console.log(new Date() + ": CPU " + usage(this.start_usage).percent.toFixed(2) + ", Mem " + (mem.rss / 1024 / 1024).toFixed(2) + "Mb (" + (mem.heapUsed / 1024 / 1024).toFixed(2) + "/" + (mem.heapTotal / 1024 / 1024).toFixed(2) + ")" );
-        if (heap_warning) global.gc();
+      let cpuWarning  = usage(this.startUsage).percent > cpuMax;
+      let heapWarning = mem.rss > heapMax;
+      usageWarning = cpuWarning || heapWarning;
+      if (usageWarning) {
+        console.log(new Date() + ": CPU " + usage(this.startUsage).percent.toFixed(2) + ", Mem " + (mem.rss / 1024 / 1024).toFixed(2) + "Mb (" + (mem.heapUsed / 1024 / 1024).toFixed(2) + "/" + (mem.heapTotal / 1024 / 1024).toFixed(2) + ")" );
+        if (heapWarning) global.gc();
       }
     }
   }

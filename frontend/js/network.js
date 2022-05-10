@@ -1,7 +1,7 @@
 let connection_alive = false;
 let maxl = 0;
-let bytes_per_soldier = 10;
-let bytes_per_player = 20;
+let bytesPerSoldier = 10;
+let bytesPerPlayer = 20;
 let timeout = 5 * 60 * 1000;
 
 let network = {
@@ -10,9 +10,9 @@ let network = {
   pid : null,
   socket : null,
 
-  init_ws : function() {
-    show_loading(true);
-    this.socket = io('https://' + ws_host + ':' + ws_port);
+  initWs : function() {
+    showLoading(true);
+    this.socket = io('https://' + wsHost + ':' + wsPort);
     let socket = this.socket;
 
 
@@ -33,69 +33,69 @@ let network = {
       me = parseInt(pid);
     });
 
-    socket.on('gss', function(buffer_compressed) {
+    socket.on('gss', function(bufferCompressed) {
 
-      let uint8 = window.pako.inflate(buffer_compressed);
+      let uint8 = window.pako.inflate(bufferCompressed);
       let buffer = uint8.buffer;
 
       if (buffer.byteLength > 0) {
-          let p1  = parsePlayerFromBuffer(new DataView(buffer, 0, bytes_per_player));
+          let p1  = parsePlayerFromBuffer(new DataView(buffer, 0, bytesPerPlayer));
           if (p1 && !players[p1.id]) {
-            parseSoldiersFromBuffer(new DataView(buffer, bytes_per_player, (p1.population * bytes_per_soldier)), p1) ;
-            add_planes(p1);
+            parseSoldiersFromBuffer(new DataView(buffer, bytesPerPlayer, (p1.population * bytesPerSoldier)), p1) ;
+            addPlanes(p1);
             if (p1) players[p1.id] = p1;
           }
 
-          let p2_byte_offset = (p1.population * bytes_per_soldier) + bytes_per_player;
-          if (p2_byte_offset === buffer.byteLength) {
-            show_loading(false);
-            ack_send = true;
+          let p2ByteOffset = (p1.population * bytesPerSoldier) + bytesPerPlayer;
+          if (p2ByteOffset === buffer.byteLength) {
+            showLoading(false);
+            ackSend = true;
             return;
           }
 
-          let p2 = parsePlayerFromBuffer(new DataView(buffer, p2_byte_offset, bytes_per_player));
-          parseSoldiersFromBuffer(new DataView(buffer, p2_byte_offset + bytes_per_player, (p2.population * bytes_per_soldier)), p2);
-          add_planes(p2);
+          let p2 = parsePlayerFromBuffer(new DataView(buffer, p2ByteOffset, bytesPerPlayer));
+          parseSoldiersFromBuffer(new DataView(buffer, p2ByteOffset + bytesPerPlayer, (p2.population * bytesPerSoldier)), p2);
+          addPlanes(p2);
           if (p2) players[p2.id] = p2;
-          ack_send = true;
+          ackSend = true;
       }
-      show_loading(false);
+      showLoading(false);
     });
 
     socket.on('create_bullets', function(buffer) {
       let i = 0;
       while (i < buffer.byteLength) {
-        let bullet_buffer = new DataView(buffer, i + bytes_per_soldier);
-        let id = bullet_buffer.getUint16(0);
+        let bulletBuffer = new DataView(buffer, i + bytesPerSoldier);
+        let id = bulletBuffer.getUint16(0);
         if (id === 0) break;
-        parseBulletFromBuffer(bullet_buffer);
-        i += bytes_per_soldier;
+        parseBulletFromBuffer(bulletBuffer);
+        i += bytesPerSoldier;
       }
 
     });
 
-    socket.on('update_soldier', function(buffer_compressed) {
-              if (buffer_compressed.byteLength === 9) {
-                let data = new DataView(buffer_compressed);
+    socket.on('update_soldier', function(bufferCompressed) {
+              if (bufferCompressed.byteLength === 9) {
+                let data = new DataView(bufferCompressed);
                 // console.log("zero_buffer");
-                s_updates_from_server[world_tick] = {
+                sUpdatesFromServer[worldTick] = {
                   timestamp : data.getFloat32(0),
                   0 : data.getUint16(4),
                   1 : data.getUint16(6),
-                  world_update : data.getUint8(8),
+                  worldUpdate : data.getUint8(8),
                   updates: null,
                 }
               } else {
-                let uint8 = window.pako.inflate(buffer_compressed);
+                let uint8 = window.pako.inflate(bufferCompressed);
                 let buffer = uint8.buffer;
                 let data = new DataView(buffer);
-                let s_updates = new DataView(buffer, 9);
+                let sUpdates = new DataView(buffer, 9);
 
-                s_updates_from_server[world_tick] = {
+                sUpdatesFromServer[worldTick] = {
                       timestamp : data.getFloat32(0),
                       0 : data.getUint16(4),
                       1 : data.getUint16(6),
-                      world_update : data.getUint8(8),
+                      worldUpdate : data.getUint8(8),
                       updates: function(buffer) {
                         dict = {};
                         let i = 0;
@@ -104,85 +104,85 @@ let network = {
                           i += 6;
                         }
                         return dict;
-                      }(s_updates)
+                      }(sUpdates)
                  };
               }
-              global_time = s_updates_from_server[world_tick].timestamp - 0.700;
-              world_tick++;
+              globalTime = sUpdatesFromServer[worldTick].timestamp - 0.700;
+              worldTick++;
     });
 
-    socket.on('update_dead_soldiers', function(buffer_compressed) {
-         let data = window.pako.inflate(buffer_compressed);
-         let d_updates = new DataView(data.buffer);
+    socket.on('update_dead_soldiers', function(bufferCompressed) {
+         let data = window.pako.inflate(bufferCompressed);
+         let dUpdates = new DataView(data.buffer);
            let i = 0;
-           while (i < d_updates.byteLength) {
-             s_dead_updates_from_server[i] = d_updates.getUint8(i++);
+           while (i < dUpdates.byteLength) {
+             sDeadUpdatesFromServer[i] = dUpdates.getUint8(i++);
            }
     });
 
     socket.on('update_time', function(time) {
-      to_go = time.time;
+      toGo = time.time;
     });
 
     socket.on('memo', function(memo) {
-      show_info(memo.msg);
+      showInfo(memo.msg);
     });
 
     socket.on('disconnect', function() {
     });
 
     socket.on("chat", function(msg) {
-      add_chat_message(msg);
+      addChatMessage(msg);
     });
   },
 
   init : function() {
-    let network = this;
-    var url = new URL(window.location.href);
-    this.pid = url.searchParams.get("id");
-    this.nonick = url.searchParams.get("nick");
+    let network    = this;
+    var url        = new URL(window.location.href);
+    this.pid       = url.searchParams.get("id");
+    this.nonick    = url.searchParams.get("nick");
     this.nocountry = url.searchParams.get("country");
     var mode = ((this.pid || this.nonick) ? 'play' : 'watch');
     fetch('//' + location.host + location.pathname + mode)
       .then(function(response) {
         return (response.ok ? response.json() : null);
      })
-      .then(function(pixel_server) {
-        show_loading(false);
-        if (pixel_server) {
-          ws_host = pixel_server.ws_host;
-          ws_port = pixel_server.ws_port;
+      .then(function(pixelServer) {
+        showLoading(false);
+        if (pixelServer) {
+          wsHost = pixelServer.wsHost;
+          wsPort = pixelServer.wsPort;
           return true;
         } else {
-          show_info(mode === "play" ? 'Sorry! All rooms currently busy<br>Please try again later...' : 'Sorry!<br>Currently no games available to watch<br>Please reload the page...');
+          showInfo(mode === "play" ? 'Sorry! All rooms currently busy<br>Please try again later...' : 'Sorry!<br>Currently no games available to watch<br>Please reload the page...');
           return false;
         }
      })
       .then(function (status) {
-        if (status) network.init_ws();
+        if (status) network.initWs();
     });
   },
 
   update : function(dt) {
-      if (send_planes_sid) {
-        this.socket.emit("planes", send_planes_sid);
-        send_planes_sid = null;
+      if (sendPlanesSid) {
+        this.socket.emit("planes", sendPlanesSid);
+        sendPlanesSid = null;
       }
 
-      if (orders_to_server.length > 0) {
-        let u16 = new Uint16Array(orders_to_server.slice(0, 3600));
+      if (ordersToServer.length > 0) {
+        let u16 = new Uint16Array(ordersToServer.slice(0, 3600));
         this.socket.emit("order", u16.buffer);
-        orders_to_server.length = 0;
+        ordersToServer.length = 0;
       }
 
-      if (send_chat_msg) {
-        this.socket.emit("chat", send_chat_msg);
-        send_chat_msg = null;
+      if (sendChatMsg) {
+        this.socket.emit("chat", sendChatMsg);
+        sendChatMsg = null;
       };
 
-      if (ack_send && me) {
+      if (ackSend && me) {
         this.socket.emit("ack", me);
-        ack_send = false;
+        ackSend = false;
       }
     }
 

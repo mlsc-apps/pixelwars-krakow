@@ -4,18 +4,18 @@ let then = Date.now(),
     interval = 1000/fps,
     delta;
 
-let gameloop = {
+let gameLoop = {
 
   gos : [],
-  pixel : null,
+  pixel   : null,
   context : null,
-  date : new Date(),
+  date    : new Date(),
 
-  go_add : function(id, go) {
+  goAdd : function(id, go) {
     this.gos.push(go);
   },
 
-  go_remove : function(go) {
+  goRemove : function(go) {
     pop(this.gos, go);
   },
 
@@ -41,23 +41,23 @@ let gameloop = {
     if (delta > interval) {
         then = now - (delta % interval);
 
-        if (loop_running) {
+        if (loopRunning) {
 
-            if (soldiers_dead.length > 0) {
-              soldiers_dead.forEach( (ds) => {
-                  this.go_remove(ds);
-                  maps_del(ds);
+            if (soldiersDead.length > 0) {
+              soldiersDead.forEach( (ds) => {
+                  this.goRemove(ds);
+                  mapsDel(ds);
               });
-              soldiers_dead.length = 0;
+              soldiersDead.length = 0;
             }
 
-            if (soldiers_new.length > 0) {
-              soldiers_new.forEach ( (ns) => {
-                this.go_add(this.gos.length, ns);
-                maps_set(ns);
-                buffers_set(ns);
+            if (soldiersNew.length > 0) {
+              soldiersNew.forEach ( (ns) => {
+                this.goAdd(this.gos.length, ns);
+                mapsSet(ns);
+                buffersSet(ns);
               });
-              soldiers_new.length = 0;
+              soldiersNew.length = 0;
             }
 
             for (var i = 0; i < this.gos.length; i++) {

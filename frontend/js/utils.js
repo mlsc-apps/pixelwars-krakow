@@ -21,19 +21,19 @@ function getCookie(cname) {
   return "";
 }
 
-function show_loading(show) {
+function showLoading(show) {
   document.getElementById('loading').style.display   = show ? "block" : "none";
 }
 
-function set_checkbox(ename, value) {
+function setCheckbox(ename, value) {
     document.getElementById(ename).checked = value;
 }
 
-function highlight_button(ename, value) {
+function highlightButton(ename, value) {
     document.getElementById(ename).style.color = value ? "blue" : "#aaa";
 }
 
-function set_checkbox_cookie(cname, ename, callback) {
+function setCheckboxCookie(cname, ename, callback) {
   let cookie = getCookie(cname);
   if (cookie != "") {
     // if (document.getElementById(ename).checked !== (cookie === "true")) {
@@ -42,39 +42,39 @@ function set_checkbox_cookie(cname, ename, callback) {
   }
 }
 
-function add_chat_message(msg) {
+function addChatMessage(msg) {
   if (!chats[msg.from]) chats[msg.from] = [];
   chats[msg.from].push("him:" + msg.text);
   let showing = document.getElementById('chat-modal').style.display === "inline-block";
-  if (!showing || (showing && chat_pid_opened !== msg.from)) {
-    players[msg.from].new_mail = true;
+  if (!showing || (showing && chatPidOpened !== msg.from)) {
+    players[msg.from].newMail = true;
   } else {
-    openchat_pid = msg.from;
+    openchatPid = msg.from;
   }
 }
 
-function init_checkboxes() {
-  set_checkbox_cookie('urgrid', 'grid_checkbox', render.toggle_grid);
-  set_checkbox_cookie('ursound', 'sound_checkbox', render.toggle_sound);
-  set_checkbox_cookie('urmusic', 'music_checkbox', render.toggle_music);
+function initCheckboxes() {
+  setCheckBoxCookie('urgrid',  'grid_checkbox',  render.toggleGrid);
+  setCheckBoxCookie('ursound', 'sound_checkbox', render.toggleSound);
+  setCheckBoxCookie('urmusic', 'music_checkbox', render.toggleMusic);
 }
 
-function open_link(name) {
+function openLink(name) {
   document.getElementById(name).click();
 }
 
-function on_key_modal(ename) {
+function onKeyModal(ename) {
   let link = document.getElementById(ename).style.display === 'inline-block' ? ename + '-c' : ename + '-o';
-  open_link(link);
+  openLink(link);
 }
 
-function show_info(message) {
+function showInfo(message) {
   document.getElementById("info-modal").innerHTML = message;
-  open_link("info-modal-o");
+  openLink("info-modal-o");
 }
 
-function show_connection_lost() {
-  show_info("Connection to server lost...<br>Refresh the page to play again");
+function showConnectionLost() {
+  showInfo("Connection to server lost...<br>Refresh the page to play again");
 }
 
 $('a[href="#standings-modal"]').click(function(event) {
@@ -135,12 +135,12 @@ function closeFullscreen() {
   }
 }
 
-function add_touch_listeners(){
+function addTouchListeners(){
   document.getElementById('grid_button').addEventListener('touchstart', (e) => {
-    render.toggle_grid();
+    render.toggleGrid();
   });
   document.getElementById('howtoplay_button').addEventListener('touchstart', (e) => {
-  show_info(`
+  showInfo(`
     <table class="howtoplay">
           <tr><td>One-finger touch</td><td>Move soldiers</td></tr>
           <tr><td>Two-finger touch move</td><td>Move camera</td></tr>
@@ -159,11 +159,10 @@ function add_touch_listeners(){
         zapsplat.com`) });
   document.getElementById('music_button').addEventListener('touchstart', (e) => {
     audio.track.play();
-    render.toggle_music();
-    render.toggle_sound();
+    render.toggleMusic();
+    render.toggleSound();
   });
 }
 
-init_checkboxes();
-add_touch_listeners();
-// open_link('standings-modal-c');
+initCheckboxes();
+addTouchListeners();

@@ -6,7 +6,7 @@ function Soldier () {
 Soldier.prototype = {
 
     around : [ [0,0], [1,0], [1,1], [0,1], [0,-1], [1,-1] ],
-    as_string : [],
+    asString : [],
 
     x : 0,     z : 0,     y : 0,
     vx : 0,    vz : 0,    vy : 0,
@@ -14,53 +14,53 @@ Soldier.prototype = {
     fz : 0,    fy : 0,    fx : 0,
 
     wait        : 0,
-    update_tick : 0,
-    orders_tick : 0,
+    updateTick  : 0,
+    ordersTick  : 0,
 
     init : function(player, x, y, z, action) {
-      this.id = guid() + (max_planes * 2) + 1;
-      this.x = x; this.sent_x = x;
-      this.z = z; this.sent_z = z;
+      this.id = guid() + (maxPlanes * 2) + 1;
+      this.x = x; this.sentX = x;
+      this.z = z; this.sentZ = z;
       this.y = 0;
       this.color    = player.color;
       this.speed    = (Math.random() * 5) + 20;
       this.power    = (this.id % 100) / 100; //random();
       this.player = player;
-      this.current_action = this.no_action;
-      soldiers_new.push(this);
+      this.currentAction = this.noAction;
+      soldiersNew.push(this);
     },
 
     chosen : function() {
     },
 
-    no_action : function(dt) {
+    noAction : function(dt) {
     },
 
-    look_fight : function(dt) {
+    lookFight : function(dt) {
       let ss = null;
       for (var i = 0; i < this.around.length; i++) {
-        let gr = gridmap_get(this.x + (this.around[i][0] * select_grid), this.z + (this.around[i][1] * select_grid));
+        let gr = gridmapGet(this.x + (this.around[i][0] * select_grid), this.z + (this.around[i][1] * select_grid));
         if (gr) ss = gr.filter( e => { return (!(e instanceof Bullet) && e.player !== this.player) });
         if (ss && ss.length > 0) break;
       }
 
       if (ss && ss.length > 0) {
         let s = rand(ss); //ss[i];
-        if (s.player !== this.player && s.current_action !== s.die) {
+        if (s.player !== this.player && s.currentAction !== s.die) {
           if (s.fix === this.fix && s.fiz === this.fiz) {
             this.enemy = s;
             s.enemy = this;
-            this.current_action = this.fight;
+            this.currentAction = this.fight;
           } else {
             this.tx = s.x;
             this.ty = s.y;
             this.tz = s.z;
-            this.current_action = this.move_to;
+            this.currentAction = this.moveTo;
 
           }
         }
       } else {
-        this.current_action = this.no_action;
+        this.currentAction = this.noAction;
       }
     },
 
@@ -84,7 +84,7 @@ Soldier.prototype = {
       let inz = ~~(nz);
       this.moving = inx != this.fix || inz != this.fiz;
       if (this.moving) {
-        let ss = fightmap_get(inx, inz);
+        let ss = fightmapGet(inx, inz);
         if (ss) {
               let ee = ss.filter( s => {
                 return s.player !== this.player;
@@ -93,9 +93,9 @@ Soldier.prototype = {
                 let s = ee[0];
                     this.enemy = s;
                     this.power += 0.1;
-                    this.current_action = this.fight;
+                    this.currentAction = this.fight;
                     s.enemy = this;
-                    s.current_action = s.no_action;
+                    s.currentAction = s.noAction;
                     return;
                 }
         }
@@ -105,88 +105,88 @@ Soldier.prototype = {
       this.y = ny;
       this.z = nz;
 
-      maps_del(this);
-      maps_set(this);
+      mapsDel(this);
+      mapsSet(this);
 
       if (this.vx * (this.tx - this.x) < 0 ||
           this.vz * (this.tz - this.z) < 0) {
           this.x = this.tx;
           this.z = this.tz;
-          maps_del(this);
-          maps_set(this);
-          this.current_action = this.look_fight;
+          mapsDel(this);
+          mapsSet(this);
+          this.currentAction = this.lookFight;
           return;
       }
 
     },
 
-    move_to : function() {
-      if (update_buffer_index === update_soldier_send_buf.length) return;
+    moveTo : function() {
+      if (updateBufferIndex === updateSoldierSendBuf.length) return;
       let dx = this.tx - this.x,
           dz = this.tz - this.z,
           dy = this.ty - this.y,
           mag = Math.sqrt(dx * dx + dz * dz + dy * dy);
 
       if (mag === 0 ) {
-        this.current_action = this.look_fight;
+        this.currentAction = this.lookFight;
         return;
       }
 
       this.vx = (dx / mag) * this.speed;
       this.vy = (dy / mag) * this.speed;
       this.vz = (dz / mag) * this.speed;
-      this.current_action = this.move;
+      this.currentAction = this.move;
     },
 
-    send_planes : function() {
+    sendPlanes : function() {
           planes[this.player.roomid].forEach( plane => {
-              plane.current_action = plane.move;
+              plane.currentAction = plane.move;
           });
       // }
-      this.current_action = this.no_action;
+      this.currentAction = this.noAction;
     },
 
-    orders_from_client : function() {
-      let order = orders_receiveq[this.orders_tick] && orders_receiveq[this.orders_tick][this.id];
+    ordersFromClient : function() {
+      let order = ordersReceiveQ[this.ordersTick] && ordersReceiveQ[this.ordersTick][this.id];
       if (order) {
         this.tx = order[0];
         this.tz = order[1];
         this.ty = 0;
         if (this.tx === this.x && this.tz === this.z) {
             let now = Date.now();
-            if (!this.player.last_shot || (now - this.player.last_shot) > max_launch_delay) {
-                this.player.last_shot = now;
-                this.current_action = this.shoot;
+            if (!this.player.lastShot || (now - this.player.lastShot) > maxLaunchDelay) {
+                this.player.lastShot = now;
+                this.currentAction = this.shoot;
             }
         } else {
-            this.current_action = this.move_to;
+            this.currentAction = this.moveTo;
         }
 
-        delete orders_receiveq[this.orders_tick][this.id];
-        if (Object.keys(orders_receiveq[this.orders_tick]).length === 0) {
-          orders_receiveq[this.orders_tick] = null;
+        delete ordersReceiveQ[this.ordersTick][this.id];
+        if (Object.keys(ordersReceiveQ[this.ordersTick]).length === 0) {
+          ordersReceiveQ[this.ordersTick] = null;
         }
       }
-      this.orders_tick = s_orders_tick;
+      this.ordersTick = sOrdersTick;
     },
 
-    check_planes : function() {
-      if (planes_sid && this.id === planes_sid) {
-          this.current_action = this.send_planes;
-          planes_sid = null;
+    checkPlanes : function() {
+      if (planesSid && this.id === planesSid) {
+          this.currentAction = this.sendPlanes;
+          planesSid = null;
       }
     },
 
     update : function(dt) {
-          if (this.orders_tick !== s_orders_tick) this.orders_from_client();
-          this.check_planes();
-          this.current_action(dt);
+          if (this.ordersTick !== sOrdersTick) this.ordersFromClient();
+          this.checkPlanes();
+          this.currentAction(dt);
 
-            if (s_world_tick) {
-              let buffer_full = update_buffer_index === update_soldier_send_buf.length;
-              let action_changed = (this.sent_x !== this.x || this.sent_z !== this.z);
+            if (sWorldTick) {
+              let bufferFull = updateBufferIndex === updateSoldierSendBuf.length;
+              let actionChanged = (this.sentX !== this.x || this.sentZ !== this.z);
 
-              if (!buffer_full && action_changed) {
+              if (!bufferFull && actionChanged) {
 
                   this.x = Math.max(0, this.x);
                   this.z = Math.max(0, this.z);
@@ -194,18 +194,18 @@ Soldier.prototype = {
                   this.x = Math.min(360, this.x);
                   this.z = Math.min(600, this.z);
 
-                  update_soldier_send_buf.writeUInt16BE(this.id, update_buffer_index);
-                  update_soldier_send_buf.writeUInt16BE(this.x,  update_buffer_index + 2);
-                  update_soldier_send_buf.writeUInt16BE(this.z,  update_buffer_index + 4);
-                  update_buffer_index += bytes_per_soldier;
-                  this.sent_x = this.x;
-                  this.sent_z = this.z;
+                  updateSoldierSendBuf.writeUInt16BE(this.id, updateBufferIndex);
+                  updateSoldierSendBuf.writeUInt16BE(this.x,  updateBufferIndex + 2);
+                  updateSoldierSendBuf.writeUInt16BE(this.z,  updateBufferIndex + 4);
+                  updateBufferIndex += bytes_per_soldier;
+                  this.sentX = this.x;
+                  this.sentZ = this.z;
               }
             }
     },
 
     die : function() {
-      soldiers_dead.push(this);
+      soldiersDead.push(this);
     },
 
     shoot : function() {
@@ -216,7 +216,7 @@ Soldier.prototype = {
           bullet.init(this.player, this.x + i, 0, this.z + j, "move");
         }
       }
-      this.current_action = this.no_action;
+      this.currentAction = this.noAction;
     },
 
     fight : function() {
@@ -236,10 +236,10 @@ Soldier.prototype = {
 
       winner.power -= 0.1;
       winner.enemy = null;
-      winner.current_action = (winner instanceof Bullet) ? winner.move : winner.look_fight;
+      winner.currentAction = (winner instanceof Bullet) ? winner.move : winner.lookFight;
 
       loser.enemy = null;
-      loser.current_action = loser.die;
+      loser.currentAction = loser.die;
     },
 
     to_buffer : function() {

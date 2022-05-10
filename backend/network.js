@@ -1,43 +1,41 @@
-const http  = require('http');
 const https = require('https');
-const fs = require('fs');
-const os = require('os');
+const fs    = require('fs');
 const socket_io = require('socket.io');
-const zlib = require('zlib');
+const zlib      = require('zlib');
 
-global.max_players = 2;
-global.update_soldier_send_buf = null;
-global.zero_buffer = null;
-global.update_buffer_index = null;
-global.soldiers_dead_buffer = null;
-global.bullets_new_buf = null;
-global.bullets_new_buf_index = 0;
+global.maxPlayers = 2;
+global.updateSoldierSendBuf = null;
+global.zeroBuffer = null;
+global.updateBufferIndex = null;
+global.soldiersDeadBuffer = null;
+global.bulletsNewBuf = null;
+global.bulletsNewBufIndex = 0;
 
-global.max_players_update = process.env.MAX_PLAYERS_UPDATE || 6000; //25000/6 bytes per player
-global.bytes_per_soldier = 6;
-global.bytes_per_timestamp  = 4;
-global.bytes_per_populations = 4;
-global.bytes_per_world_flag = 1;
-global.bytes_to_spare = 2;
-global.world_update = false;
-global.additional_bytes = 0;
+global.maxPlayersUpdate = process.env.maxPlayersUpdate || 6000; //25000/6 bytes per player
+global.bytesPerSoldier = 6;
+global.bytesPerTimestamp  = 4;
+global.bytesPerPopulation = 4;
+global.bytesPerWorldFlag = 1;
+global.bytesToSpare = 2;
+global.worldUpdate = false;
+global.additionalBytes = 0;
 
-global.orders_receiveq = [];
-global.ack_received = null;
+global.ordersReceiveQ = [];
+global.ackReceived = null;
 
-global.max_soldiers = 32000;
-global.max_bullets = 1000;
+global.maxSoldiers = 32000;
+global.maxBullets = 1000;
 
-global.planes_sid = null;
+global.planesSid = null;
 
 
 global.network = {
 
     wait : 0,
     wait2 : 0,
-    max_bytes_sent : 36000,
-    bytes_sent : 0,
-    d_bytes_sent : 0,
+    maxBytesSent : 36000,
+    bytesSent : 0,
+    dBytesSent : 0,
 
     init : function() {
 
@@ -62,16 +60,16 @@ global.network = {
 
           socket.on('join', function(premote) {
             let l = Object.keys(players).length;
-            if (players_dict_locked) {
+            if (playersDictLocked) {
               console.log(new Date() + `: Guest (${socket.id}) wanted to join but game already locked`)
             }
-            if (l < max_players && !players_dict_locked) {
+            if (l < maxPlayers && !playersDictLocked) {
                   if (l === 1 && Object.values(players)[0].id === premote.id) {
                     socket.disconnect(true);
                     return;
                   }
-                  if (l === 1) players_dict_locked = true;
-                  add_player(premote, function(np) {
+                  if (l === 1) playersDictLocked = true;
+                  addPlayer(premote, function(np) {
                         np.connection = socket;
                         socket.player = np;
                         console.log(new Date() + `: Player ${np.nick} (${np.id}), ${np.country},  joined ( ${socket.id} )`);
@@ -89,22 +87,22 @@ global.network = {
           });
 
           socket.on('getgss', function() {
-            zlib.deflate(get_game_state(), function(err, buffer) {
+            zlib.deflate(getGameState(), function(err, buffer) {
               socket.emit('gss', buffer);
             });
           });
 
           socket.on('ack', function(pid) {
-            ack_received = pid;
+            ackReceived = pid;
           });
 
           socket.on('planes', function(sid) {
-            planes_sid = sid;
+            planesSid = sid;
           });
 
           socket.on('order', function(buffer) {
             let buf = Buffer.from(buffer);
-            orders_receiveq[s_orders_tick] = function(buffer) {
+            ordersReceiveQ[sOrdersTick] = function(buffer) {
               dict = {};
               let i = 0;
               while (i < buffer.byteLength) {
@@ -113,102 +111,102 @@ global.network = {
               }
               return dict;
             }(buf);
-            s_orders_tick++;
+            sOrdersTick++;
           });
 
       });
 
-      additional_bytes = bytes_per_timestamp + bytes_per_populations + bytes_per_world_flag;
-      update_soldier_send_buf = Buffer.alloc((max_players_update * bytes_per_soldier) + additional_bytes);
-      soldiers_dead_buffer = Buffer.alloc(max_soldiers + max_bullets); //+1000 bullets
-      bullets_new_buf = Buffer.alloc(max_bullets * 10); // 1000 bullets
-      update_buffer_index = additional_bytes;
+      additionalBytes      = bytesPerTimestamp + bytesPerPopulation + bytesPerWorldFlag;
+      updateSoldierSendBuf = Buffer.alloc((maxPlayersUpdate * bytesPerSoldier) + additionalBytes);
+      soldiersDeadBuffer = Buffer.alloc(maxSoldiers + maxBullets); //+1000 bullets
+      bulletsNewBuf      = Buffer.alloc(maxBullets * 10); // 1000 bullets
+      updateBufferIndex  = additionalBytes;
   },
 
-    process_queue : function(q, type) {
+    processQueue : function(q, type) {
       if (Object.keys(q).length > 0) {
         this.io.emit(type, q);
       }
     },
 
-    process_update_queue : function() {
+    processUpdateQueue : function() {
       let pp = Object.values(players);
-      if (!this.last_global_time) this.last_global_time = global_time;
-      let insec = global_time - this.last_global_time < 1;
+      if (!this.lastGlobalTime) this.lastGlobalTime = globalTime;
+      let insec = globalTime - this.lastGlobalTime < 1;
       if (insec) {
-        this.bytes_left = this.max_bytes_sent - this.bytes_sent;
-        this.allow_to_send = this.bytes_left > 0;
+        this.bytesLeft = this.maxBytesSent - this.bytesSent;
+        this.allowToSend = this.bytesLeft > 0;
       }
-      if (!(insec && this.allow_to_send)) {
-        this.d_bytes_sent = 0;
-        this.bytes_sent = 0;
-        this.last_global_time = global_time;
-        this.bytes_left = this.max_bytes_sent;
+      if (!(insec && this.allowToSend)) {
+        this.dBytesSent = 0;
+        this.bytesSent = 0;
+        this.lastGlobalTime = globalTime;
+        this.bytesLeft = this.maxBytesSent;
       }
 
-      if (update_buffer_index < update_soldier_send_buf.length) update_soldier_send_buf.fill(0, update_buffer_index);
-      update_soldier_send_buf.writeFloatBE(global_time, 0);
-      update_soldier_send_buf.writeUInt16BE(pp[0].population, 4);
-      update_soldier_send_buf.writeUInt16BE(pp[1].population, 6);
-      update_soldier_send_buf.writeUInt8(world_update, 8);
+      if (updateBufferIndex < updateSoldierSendBuf.length) updateSoldierSendBuf.fill(0, updateBufferIndex);
+      updateSoldierSendBuf.writeFloatBE(globalTime, 0);
+      updateSoldierSendBuf.writeUInt16BE(pp[0].population, 4);
+      updateSoldierSendBuf.writeUInt16BE(pp[1].population, 6);
+      updateSoldierSendBuf.writeUInt8(worldUpdate, 8);
 
-      if (this.allow_to_send) {
-        zlib.deflate(update_soldier_send_buf.buffer, function(err, buffer) {
-          network.bytes_sent += buffer.byteLength;
+      if (this.allowToSend) {
+        zlib.deflate(updateSoldierSendBuf.buffer, function(err, buffer) {
+          network.bytesSent += buffer.byteLength;
           network.io.emit("update_soldier", buffer);
         });
       } else {
-          network.io.emit("update_soldier", Buffer.from(update_soldier_send_buf.buffer, 0, additional_bytes));
+          network.io.emit("update_soldier", Buffer.from(updateSoldierSendBuf.buffer, 0, additionalBytes));
       }
-      update_buffer_index = additional_bytes;
+      updateBufferIndex = additionalBytes;
     },
 
-    process_dead_queue : function() {
-      if (this.allow_to_send) {
-        zlib.deflate(soldiers_dead_buffer.buffer, function(err, buffer) {
-          network.d_bytes_sent += buffer.byteLength;
+    processDeadQueue : function() {
+      if (this.allowToSend) {
+        zlib.deflate(soldiersDeadBuffer.buffer, function(err, buffer) {
+          network.dBytesSent += buffer.byteLength;
           network.io.emit("update_dead_soldiers", buffer);
         });
       }
     },
 
-    process_bullets_queue : function() {
-        if (this.allow_to_send && bullets_new_buf_index > 0) {
-            if (bullets_new_buf_index < bullets_new_buf.length) bullets_new_buf.fill(0, bullets_new_buf_index);
-            network.io.emit("create_bullets", bullets_new_buf);
-            network.d_bytes_sent += bullets_new_buf.byteLength;
+    processBulletsQueue : function() {
+        if (this.allowToSend && bulletsNewBufIndex > 0) {
+            if (bulletsNewBufIndex < bulletsNewBuf.length) bulletsNewBuf.fill(0, bulletsNewBufIndex);
+            network.io.emit("create_bullets", bulletsNewBuf);
+            network.dBytesSent += bulletsNewBuf.byteLength;
         }
-        bullets_new_buf_index = 0;
+        bulletsNewBufIndex = 0;
     },
 
     update : function() {
-      if (s_world_tick)  {
-        this.process_update_queue();
-        this.process_dead_queue();
-        this.process_bullets_queue();
+      if (sWorldTick)  {
+        this.processUpdateQueue();
+        this.processDeadQueue();
+        this.processBulletsQueue();
       }
-      this.process_queue(update_player_sendq, "update_player");
-      this.process_queue(update_time_sendq,   "update_time");
+      this.processQueue(updatePlayerSendQ, "update_player");
+      this.processQueue(updateTimeSendQ,   "update_time");
 
-      update_player_sendq = {};
-      update_time_sendq = {};
+      updatePlayerSendQ = {};
+      updateTimeSendQ   = {};
 
-      if (send_game_state) {
-        zlib.deflate(get_game_state(), function(err, buffer) {
+      if (sendGameState) {
+        zlib.deflate(getGameState(), function(err, buffer) {
           network.io.emit('gss', buffer);
         });
-        send_game_state = false;
+        sendGameState = false;
       }
     },
 
     reset : function() {
-      update_player_sendq = {};
-      update_time_sendq = {};
-      orders_receiveq = [];
-      soldiers_dead_buffer.fill(0);
-      update_soldier_send_buf.fill(0);
-      bullets_new_buf.fill(0);
-      update_buffer_index = additional_bytes;
+      updatePlayerSendQ = {};
+      updateTimeSendQ   = {};
+      ordersReceiveQ    = [];
+      soldiersDeadBuffer.fill(0);
+      updateSoldierSendBuf.fill(0);
+      bulletsNewBuf.fill(0);
+      updateBufferIndex = additionalBytes;
 
       Object.values(this.io.sockets.connected).forEach( s => {
          s.disconnect(true);

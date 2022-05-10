@@ -14,32 +14,32 @@ let Soldier = {
       this.function_map = {
         "die"             : this.die,
         "move"            : this.move,
-        "move_to"         : this.move_to
+        "moveTo"         : this.moveTo
       };
-      this.current_action = this.no_action;
-      soldiers_new.push(this);
+      this.currentAction = this.noAction;
+      soldiersNew.push(this);
 
       this.wait = 0;
-      this.client_tick = 0;
-      this.last_dead_tick = 0;
-      this.die_delay = Math.random() * 0.5;
+      this.clientTick = 0;
+      this.lastDeadTick = 0;
+      this.dieDelay = Math.random() * 0.5;
     },
 
-    blink_out : function() {
+    blinkOut : function() {
       this.color.multiplyScalar(0.8);
       if (this.color.toArray()[(this.player.roomid * -2.0) + 2.0] < 0.4) {
-        this.current_action = this.blink_in;
+        this.currentAction = this.blinkIn;
       }
     },
 
-    blink_in : function(dt) {
+    blinkIn : function(dt) {
       this.color.multiplyScalar(1.2);
       if (this.color.toArray()[(this.player.roomid * -2.0) + 2.0] > 1) {
-        this.current_action = this.blink_out;
+        this.currentAction = this.blinkOut;
       }
     },
 
-    no_action : function(dt) {
+    noAction : function(dt) {
     },
 
     move : function(dt) {
@@ -61,25 +61,25 @@ let Soldier = {
       // this.y = ny;
       this.z = nz;
 
-      maps_del(this);
-      maps_set(this);
+      mapsDel(this);
+      mapsSet(this);
 
       if (this.vx * (this.tx - this.x) < 0 ||
           this.vz * (this.tz - this.z) < 0 &&
-          this.local_move) {
-          this.local_move = null;
+          this.localMove) {
+          this.localMove = null;
       }
 
     },
 
-    move_to : function() {
+    moveTo : function() {
       let dx = this.tx - this.x,
           dz = this.tz - this.z,
           dy = 0; //this.ty - this.y,
           mag = Math.sqrt(dx * dx + dz * dz + dy * dy);
 
       if (mag === 0 ) {
-        this.current_action = this.no_action;
+        this.currentAction = this.noAction;
         return;
       }
 
@@ -87,93 +87,93 @@ let Soldier = {
       this.vy = 0; //(dy / mag) * this.speed / (1 + (this.player.latency || 0));
       this.vz = (dz / mag) * this.speed / (1 + (this.player.latency || 0));
 
-      this.local_move = global_time;
-      this.current_action = this.move;
+      this.localMove = globalTime;
+      this.currentAction = this.move;
     },
 
-    world_ticks_update : function() {
-            let current_snapshot = s_updates_from_server[client_tick];
-            let next_snapshot    = s_updates_from_server[client_tick + 1];
+    worldTicksUpdate : function() {
+            let currentSnapshot = sUpdatesFromServer[clientTick];
+            let nextSnapshot    = sUpdatesFromServer[clientTick + 1];
 
-            if (!current_snapshot || !next_snapshot) {
-              this.current_action = this.no_action;
+            if (!currentSnapshot || !nextSnapshot) {
+              this.currentAction = this.noAction;
               return;
             }
 
-            if (!next_snapshot.updates) {
+            if (!nextSnapshot.updates) {
               return;
             }
 
-            this.is_next = next_snapshot.updates[this.id];
+            this.isNext = nextSnapshot.updates[this.id];
 
-            if (!this.is_next) {
-                if (!this.chosen && !this.local_move) {
-                  if (this.last_remote_x && this.last_remote_z) {
-                    this.x = this.last_remote_x;
-                    this.z = this.last_remote_z;
-                    maps_del(this);
-                    maps_set(this);
-                    this.last_remote_x = null;
-                    this.last_remote_z = null;
+            if (!this.isNext) {
+                if (!this.chosen && !this.localMove) {
+                  if (this.lastRemoteX && this.lastRemoteZ) {
+                    this.x = this.lastRemoteX;
+                    this.z = this.lastRemoteZ;
+                    mapsDel(this);
+                    mapsSet(this);
+                    this.lastRemoteX = null;
+                    this.lastRemoteZ = null;
                   }
-                  this.current_action = this.no_action;
+                  this.currentAction = this.noAction;
                 }
               }
 
-            if (this.is_next) {
-                  let remote_x = next_snapshot.updates[this.id][0];
-                  let remote_z = next_snapshot.updates[this.id][1];
-                  if (this.local_move) {
-                    if (current_snapshot.timestamp - this.local_move > 0.350) {
-                      this.ax = (remote_x - this.x);
-                      this.az = (remote_z - this.z);
+            if (this.isNext) {
+                  let remoteX = nextSnapshot.updates[this.id][0];
+                  let remoteZ = nextSnapshot.updates[this.id][1];
+                  if (this.localMove) {
+                    if (currentSnapshot.timestamp - this.localMove > 0.350) {
+                      this.ax = (remoteX - this.x);
+                      this.az = (remoteZ - this.z);
                       if ((this.vx * this.ax) >= 0 && (this.vz * this.az) >= 0) {
                           this.ax = 0;
                           this.az = 0;
-                          this.local_move = null;
+                          this.localMove = null;
                       }
                     }
                   } else {
-                    if (Math.abs(remote_x - this.x) < 0.1) this.x = remote_x;
-                    if (Math.abs(remote_z - this.z) < 0.1) this.z = remote_z;
-                    this.vx = (remote_x - this.x) * (1 / (next_snapshot.timestamp - current_snapshot.timestamp));
-                    this.vz = (remote_z - this.z) * (1 / (next_snapshot.timestamp - current_snapshot.timestamp));
-                    this.current_action = (this.vx === 0 && this.vz === 0) ? this.chosen ? this.current_action : this.no_action : this.move;
+                    if (Math.abs(remoteX - this.x) < 0.1) this.x = remoteX;
+                    if (Math.abs(remoteZ - this.z) < 0.1) this.z = remoteZ;
+                    this.vx = (remoteX - this.x) * (1 / (nextSnapshot.timestamp - currentSnapshot.timestamp));
+                    this.vz = (remoteZ - this.z) * (1 / (nextSnapshot.timestamp - currentSnapshot.timestamp));
+                    this.currentAction = (this.vx === 0 && this.vz === 0) ? this.chosen ? this.currentAction : this.noAction : this.move;
                   }
-                  this.last_remote_x = remote_x;
-                  this.last_remote_z = remote_z;
-                  this.last_update_timestamp = next_snapshot.timestamp;
+                  this.lastRemoteX = remoteX;
+                  this.lastRemoteZ = remoteZ;
+                  this.lastUpdateTimestamp = nextSnapshot.timestamp;
               }
-            this.client_tick = client_tick;
+            this.clientTick = clientTick;
       },
 
-      world_dead_update : function() {
-        if (s_dead_updates_from_server[this.id]) {
-            this.current_action = this.player.population === 1 ? this.die : this.die_delayed;
+      worldDeadUpdate : function() {
+        if (sDeadUpdatesFromServer[this.id]) {
+            this.currentAction = this.player.population === 1 ? this.die : this.dieDelayed;
         }
       },
 
       update : function(dt) {
-        this.chosen = (this.current_action === this.blink_in || this.current_action === this.blink_out);
-        if (this.client_tick !== client_tick) {
-          this.world_ticks_update();
-          this.world_dead_update();
+        this.chosen = (this.currentAction === this.blink_in || this.currentAction === this.blinkOut);
+        if (this.clientTick !== clientTick) {
+          this.worldTicksUpdate();
+          this.worldDeadUpdate();
         }
-        this.current_action(dt);
-        buffers_set(this);
+        this.currentAction(dt);
+        buffersSet(this);
 
       },
 
       die : function() {
         this.color.set(0xffffff);
-        if (Math.random() > 0.9) audio_play.push('die');
-        soldiers_dead.push(this);
+        if (Math.random() > 0.9) audioPlay.push('die');
+        soldiersDead.push(this);
       },
 
-      die_delayed : function(dt) {
-        if ((this.wait += dt) > this.die_delay) {
+      dieDelayed : function(dt) {
+        if ((this.wait += dt) > this.dieDelay) {
           this.wait = 0;
-          this.current_action = this.die;
+          this.currentAction = this.die;
         }
       }
 }

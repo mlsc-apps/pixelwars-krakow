@@ -1,140 +1,137 @@
-const Soldier = require('./soldier');
-const Player  = require('./player');
-const Plane   = require('./plane')
-const crypto   = require('crypto');
-const snappyjs = require('snappyjs')
-const zlib = require('zlib');
+const Soldier   = require('./soldier');
+const Player    = require('./player');
+const Plane     = require('./plane')
+const crypto    = require('crypto');
 const algorithm = 'aes-256-cbc';
 
-global.ws_port = null;
+global.wsPort = null;
 
-global.players_new   = [];
-global.players_dead  = [];
-global.players_remove = [];
-global.game_state = {};
-global.players   = {};
+global.playersNew    = [];
+global.playersDead   = [];
+global.playersRemove = [];
+global.gameState  = {};
+global.players    = {};
 global.vertexgrid = {};
-global.messages  = [];
-global.messages_1    = [];
-global.soldiers_dead = [];
-global.soldiers_new  = [];
-global.soldiers_load = [];
-global.bullets_new  = [];
-global.bullets_hit  = [];
-global.planes_new = [];
-global.pc_index = 0;
+global.messages   = [];
+global.messages_1   = [];
+global.soldiersDead = [];
+global.soldiersNew  = [];
+global.soldiersLoad = [];
+global.bulletsNew   = [];
+global.bulletsHit   = [];
+global.planesNew    = [];
+global.pcIndex  = 0;
 global.mouse    = [];
 global.around   = [];
 
-global.segments_x = 0;
-global.segments_y = 0;
-global.gridsize_X = 150;
-global.gridsize_Y = 150;
-global.scale_y = 25;
-global.size_x = 0;
-global.size_y = 0;
+global.segmentsX = 0;
+global.segmentsY = 0;
+global.gridsizeX = 150;
+global.gridsizeY = 150;
+global.scaleY = 25;
+global.sizeX  = 0;
+global.sizeY  = 0;
 
 global.loop = null;
-global.terrain_initialized = false;
+global.terrainInitialized = false;
 
-global.modes_receiveq = {};
-global.create_soldier_sendq = [];
-global.update_player_sendq = {};
-global.create_player_sendq = [];
-global.chat_player_sendq = [];
-global.create_bullet_sendq = [];
-global.update_time_sendq = [];
-global.soldiers_dead_sendq = [];
+global.modesReceiveq = {};
+global.createSoldierSendq = [];
+global.updatePlayerSendq = {};
+global.createPlayerSendq = [];
+global.chatPlayerSendq = [];
+global.createBulletSendq = [];
+global.updateTimeSendq = [];
+global.soldiersDeadSendq = [];
 
 global.dbconn = null;
 
-global.max_soldiers_x = 360;
-global.max_soldiers_z = 240;
-global.select_grid = 40;
-global.grid_x = max_soldiers_x / select_grid;
-global.grid_z = (max_soldiers_z * 3) / select_grid;
+global.maxSoldiersX = 360;
+global.maxSoldiersZ = 240;
+global.selectGrid = 40;
+global.gridX = maxSoldiersX / selectGrid;
+global.gridZ = (maxSoldiersZ * 3) / selectGrid;
 global.fightmap = {};
-global.gridmap = {};
+global.gridmap  = {};
 
-global.game_started_at = null;
-global.to_go = null;
-global.loop_running = true;
-global.reset_loop = false;
-global.game_max_time = 300;
+global.gameStartedAt = null;
+global.toGo = null;
+global.loopRunning = true;
+global.resetLoop   = false;
+global.gameMaxTime = 300;
 global.gridweights = [];
 global.seed = 1;
 
-global.global_time = 0;
-global.s_world_tick = false;
-global.s_dead_tick = false;
-global.s_orders_tick = 0;
+global.globalTime  = 0;
+global.sWorldTick  = false;
+global.sDeadTick   = false;
+global.sOrdersTick = 0;
 
-global.id_index = 0;
-global.bullet_index = 0;
-global.max_launch_delay = 5000;
-// global.plane_index = 1;
-global.max_planes = 5;
+global.idIndex = 0;
+global.bulletIndex = 0;
+global.maxLaunchDelay = 5000;
+global.maxPlanes = 5;
 
-global.players_dict_locked = false;
+global.playersDictLocked = false;
 
-function get_soldiers() {
+function getSoldiers() {
   let ps = {};
   for (var i = 0; i < gameloop.gos.length; i++) {
     let s = gameloop.gos[i];
     if (s instanceof Soldier) {
       let pid = s.player.id;
       if (!ps[pid]) ps[pid] = Buffer.alloc(0);
-      ps[pid] = Buffer.concat([ps[pid], s.to_buffer()]);
+      ps[pid] = Buffer.concat([ps[pid], s.toBuffer()]);
     }
   }
   return ps;
 }
 
-global.get_game_state = function() {
-        let gss_buffer = Buffer.alloc(0);
-        let ps = get_soldiers();
+global.getGameState = function() {
+        let gssBuffer = Buffer.alloc(0);
+        let ps = getSoldiers();
         for (var i = 0; i < Object.values(players).length; i++) {
           let p = Object.values(players)[i];
-          let pbuf = p.to_buffer();
-          let sbuf = Buffer.from(ps[p.id]);
-          gss_buffer = Buffer.concat([gss_buffer, pbuf, sbuf]);
+          let pbuf   = p.toBuffer();
+          let sbuf   = Buffer.from(ps[p.id]);
+          gssBuffer  = Buffer.concat([gssBuffer, pbuf, sbuf]);
         }
-        return gss_buffer;
+        return gssBuffer;
 }
 
 global.planes = {};
 
-global.add_planes = function(p) {
+global.addPlanes = function(p) {
   planes[p.roomid] = [];
   for (var i = 0; i < max_planes; i++) {
     let plane = new Plane();
-    plane.init((p.roomid * max_planes) + i + 1, p, (i * 2 * select_grid) + (select_grid / 2), 0, p.roomid * 600);
+    plane.init((p.roomid * max_planes) + i + 1, p, (i * 2 * selectGrid) + (selectGrid / 2), 0, p.roomid * 600);
     planes[p.roomid].push(plane);
   }
 }
 
-global.add_soldiers = function(p, callback) {
+global.addSoldiers = function(p, callback) {
   let bx = 0; //size_x/2 + (1500 * p.roomid);
-  let bz = max_soldiers_z * 1.5 * p.roomid; //max_soldiers_z * 2 * p.roomid; //size_y/2;
-  let player_population = 0;
-  for (i=1; i < max_soldiers_x; i++) {
-    for (j=1; j < max_soldiers_z; j++) {
+  let bz = maxSoldiersZ * 1.5 * p.roomid; //maxSoldiersZ * 2 * p.roomid; //size_y/2;
+  let playerPopulation = 0;
+  for (i=1; i < maxSoldiersX; i++) {
+    for (j=1; j < maxSoldiersZ; j++) {
         if (Math.random() < 0.820) continue;
         let s = new Soldier();
         s.init(p, bx + i, 0, bz + j, "no_action");
-        player_population++;
+        playerPopulation++;
     }
   }
-  callback(player_population);
+  callback(playerPopulation);
 }
 
-global.add_player = function(p, callback_when_done) {
+global.addPlayer = function(p, callbackWhenDone) {
     let pl = new Player();
-    pl.init(p, callback_when_done);
+    pl.init(p, callbackWhenDone);
     return pl;
 }
 
-global.load_soldiers = function(p) {
+global.loadSoldiers = function(p) {
   p.soldiers.forEach( (s) => {
     let sol = new Soldier();
     sol.load(p, s);
@@ -142,18 +139,18 @@ global.load_soldiers = function(p) {
   p.soldiers = null;
 }
 
-global.load_player = function(p) {
+global.loadPlayer = function(p) {
     let pl = new Player();
     pl.load(p);
     return pl;
 }
 
-global.get_y = function(x, z) {
-  let px = ~~(x / gridsize_X);
-  let pz = ~~(z / gridsize_Y);
+global.getY = function(x, z) {
+  let px = ~~(x / gridsizeX);
+  let pz = ~~(z / gridsizeY);
 
-  let rx = (x - (px * gridsize_X)) / gridsize_X;
-  let rz = (z - (pz * gridsize_Y)) / gridsize_Y;
+  let rx = (x - (px * gridsizeX)) / gridsizeX;
+  let rz = (z - (pz * gridsizeY)) / gridsizeY;
 
   if (!vertexgrid[px]) return null;
   let vs = vertexgrid[px][pz];
@@ -182,7 +179,7 @@ global.get_y = function(x, z) {
   return yy;
 }
 
-global.create_vertexgrid = function(x, z) {
+global.createVertexgrid = function(x, z) {
   if (!vertexgrid[x]) vertexgrid[x] = {};
   if (!vertexgrid[x][z]) vertexgrid[x][z] = {};
   return vertexgrid[x][z];
@@ -195,14 +192,14 @@ global.pop = function(array, e) {
   }
 }
 
-global.update_field = function(f, x, z) {
+global.updateField = function(f, x, z) {
   let w = (f.room0 - f.room1) / f.ss.length;
   f.w = Math.round(w * 10) / 10;
 }
 
-global.maps_set = function(s) {
-  let x = ~~(s.x / select_grid);
-  let z = ~~(s.z / select_grid);
+global.mapsSet = function(s) {
+  let x = ~~(s.x / selectGrid);
+  let z = ~~(s.z / selectGrid);
   if (!gridmap[x]) gridmap[x] = {};
   if (!gridmap[x][z]) {
     gridmap[x][z] = {};
@@ -215,7 +212,7 @@ global.maps_set = function(s) {
   }
   gridmap[x][z].ss.push(s);
   gridmap[x][z]['room'+s.player.roomid]++;
-  update_field(gridmap[x][z], x, z);
+  updateField(gridmap[x][z], x, z);
   s.fx = x;
   s.fz = z;
 
@@ -227,26 +224,26 @@ global.maps_set = function(s) {
   fightmap[s.fix][s.fiz].push(s); // = s; /// = s;
 }
 
-global.gridmap_get = function(x, z) {
-  x = ~~(x / select_grid);
-  z = ~~(z / select_grid);
+global.gridmapGet = function(x, z) {
+  x = ~~(x / selectGrid);
+  z = ~~(z / selectGrid);
   return gridmap[x] && gridmap[x][z] && gridmap[x][z].ss;
 }
 
-global.fightmap_get = function(x, z) {
+global.fightmapGet = function(x, z) {
   return fightmap[x] && fightmap[x][z];
 }
 
-global.maps_del = function(s) {
+global.mapsDel = function(s) {
      let x = s.fx;
      let z = s.fz;
      pop(gridmap[x][z].ss, s);
      gridmap[x][z]['room'+s.player.roomid]--;
-     update_field(gridmap[x][z], x, z);
+     updateField(gridmap[x][z], x, z);
      pop(fightmap[s.fix][s.fiz], s); // = null;
   }
 
-global.position_lerp = function(min, max) {
+global.positionLerp = function(min, max) {
    return ((max - min) / 2) + min;
 }
 
@@ -259,7 +256,7 @@ global.rint = function(a) {
 }
 
 global.guid = function() {
-  return id_index++;
+  return idIndex++;
 }
 
 global.random = function(){
@@ -268,14 +265,14 @@ global.random = function(){
 }
 
 global.encrypt = function(text){
-  var cipher = crypto.createCipher(algorithm, '2w3e2w3e4r2wdd')
+  var cipher = crypto.createCipheriv(algorithm, '2w3e2w3e4r2wdd')
   var crypted = cipher.update(text,'utf8','hex')
   crypted += cipher.final('hex');
   return crypted;
 }
 
 global.decrypt = function(text){
-  var decipher = crypto.createDecipher(algorithm, '2w3e2w3e4r2wdd')
+  var decipher = crypto.createDecipheriv(algorithm, '2w3e2w3e4r2wdd')
   var dec = decipher.update(text,'hex','utf8')
   dec += decipher.final('utf8');
   return dec;

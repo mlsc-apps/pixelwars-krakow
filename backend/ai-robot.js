@@ -1,5 +1,5 @@
-const wps_api  = require('./wps-api');
-let think_table = [0.4, 0.5, 0.6, 0.7]; //, 0.9, 1.0, 1.1];
+const wpsApi  = require('./wps-api');
+let thinkTable = [0.4, 0.5, 0.6, 0.7]; //, 0.9, 1.0, 1.1];
 let multiorder  = [0,0,0,1,-1];
 
 function Ai () {
@@ -9,162 +9,162 @@ Ai.prototype = {
 
   wait : 0,
   wait2 : 0,
-  eval_wait : 0,
+  evalWait : 0,
   player : null,
-  think_time : null,
+  thinkTime : null,
   actions : null,
-  last_shot : 0,
+  lastShot : 0,
   around : [ [0,0], [1,0], [1,1], [0,1], [0,-1], [1,-1], [-1,1], [-1,0], [-1,-1], [0,-1], [1,-1] ],
 
-  ai_settings : {
+  aiSettings : {
     0 : {
       weight : 1,
       startrow: 5,
       startrowend: 5,
-      enemy_weight : -1,
-      enemy_startrow: 9,
-      enemy_startrowend: 9
+      enemyWeight : -1,
+      enemyStartRow: 9,
+      enemyStartRowend: 9
     },
     1 : {
       weight: -1,
       startrow: 9,
       startrowend: 9,
-      enemy_weight: 1,
-      enemy_startrow: 5,
-      enemy_startrowend: 5
+      enemyWeight: 1,
+      enemyStartRow: 5,
+      enemyStartRowend: 5
     }
   },
 
-  init_modes : function(p) {
+  initModes : function(p) {
     p.modes = [
-      [p.attack, p.attack,  p.attack, p.attack, p.consolidate, p.shoot, p.call_planes],
-      [p.merge_all, p.attack, p. attack, p. attack, p.call_planes]
+      [p.attack, p.attack,  p.attack, p.attack, p.consolidate, p.shoot, p.callPlanes],
+      [p.mergeAll, p.attack, p. attack, p. attack, p.callPlanes]
     ]
   },
 
-  call_planes : function(dt) {
+  callPlanes : function(dt) {
     let pp = Object.values(players);
-    let this_player = pp[0] === this.player ? pp[0] : pp[1];
-    let enemy_player = pp[0] === this.player ? pp[1] : pp[0];
-    let sent_probability = Math.random() > 0.3;
+    let thisPlayer = pp[0]  === this.player ? pp[0] : pp[1];
+    let enemyPlayer = pp[0] === this.player ? pp[1] : pp[0];
+    let sentProbability = Math.random() > 0.3;
 
-    let send_when_under = (enemy_player.population - this_player.population > (enemy_player.population * 0.1) && this_player.population > 500);  // && sent_probability);
-    if (send_when_under) {
+    let sendWhenUnder = (enemyPlayer.population - thisPlayer.population > (enemyPlayer.population * 0.1) && thisPlayer.population > 500);  // && sentProbability);
+    if (sendWhenUnder) {
       this.wait2 += dt;
       if (this.wait2 > 1) {
         this.wait2 = 0;
-        let us = this.get_grid_us();
+        let us = this.getGridUs();
         if (us) {
-          let ss = gridmap_get(us.x * select_grid, us.z * select_grid);
+          let ss = gridmapGet(us.x * selectGrid, us.z * selectGrid);
           if (ss && ss.length > 0) {
             let s = rand(ss);
-            s.current_action = s.send_planes;
+            s.currentAction = s.sendPlanes;
           }
-          this.modes[1].pop(this.call_planes);
-          this.current_action = this.choose_action;
+          this.modes[1].pop(this.callPlanes);
+          this.currentAction = this.chooseAction;
         } else {
-          this.current_action = this.choose_action;
+          this.currentAction = this.chooseAction;
         }
       }
     } else {
-      this.current_action = this.choose_action;
+      this.currentAction = this.chooseAction;
     }
   },
 
   shoot : function() {
     let now = Date.now();
-    if (now - this.last_shot > max_launch_delay) {
-          let us = this.get_grid_us();
-          let ss = gridmap_get(us.x * select_grid, us.z * select_grid);
+    if (now - this.lastShot > maxLaunchDelay) {
+          let us = this.getGridUs();
+          let ss = gridmapGet(us.x * selectGrid, us.z * selectGrid);
           if (ss && ss.length > 0) {
             let s = rand(ss);
-            s.current_action = s.shoot;
+            s.currentAction = s.shoot;
           }
-          this.last_shot = now;
+          this.lastShot = now;
     }
-    this.current_action = this.choose_action;
+    this.currentAction = this.chooseAction;
   },
 
   order : function(us, them) {
-    let ss = gridmap_get(us.x * select_grid, us.z * select_grid);
+    let ss = gridmapGet(us.x * selectGrid, us.z * selectGrid);
     if (ss) {
       ss.forEach( s => {
-        if (s.player === this.player && s.current_action !== s.move && s.current_action !== s.fight) {
-          let xingrid = s.x - (s.fx * select_grid);
-          let zingrid = s.z - (s.fz * select_grid);
-          s.tx = (them.x * select_grid) + xingrid;
-          s.tz = (them.z * select_grid) + zingrid;
+        if (s.player === this.player && s.currentAction !== s.move && s.currentAction !== s.fight) {
+          let xingrid = s.x - (s.fx * selectGrid);
+          let zingrid = s.z - (s.fz * selectGrid);
+          s.tx = (them.x * selectGrid) + xingrid;
+          s.tz = (them.z * selectGrid) + zingrid;
           s.ty = 0;
-          s.current_action = s.move_to;
+          s.currentAction = s.moveTo;
 
         }
       });
     }
   },
 
-  choose_action : function() {
-    this.current_action = rand(this.modes[this.player.population < 3000 ? 1 : 0]);
+  chooseAction : function() {
+    this.currentAction = rand(this.modes[this.player.population < 3000 ? 1 : 0]);
   },
 
-  merge_all : function() {
-    let ww = gridweights.filter( g => { return g.w === this.ai_settings[this.player.roomid].weight });
+  mergeAll : function() {
+    let ww = gridweights.filter( g => { return g.w === this.aiSettings[this.player.roomid].weight });
     ww.forEach(us => {
         for (var i = 0; i < this.around.length; i++) {
           this.order({ "x" : us.x + this.around[i][0], "z" : us.z + this.around[i][1] }, us);
         }
     });
-    this.current_action = this.choose_action;
+    this.currentAction = this.chooseAction;
   },
 
   init : function(except) {
     let obj = this;
-    wps_api.find_robot(except, function(id) {
-      add_player({"id" : id}, function(np) {
+    wpsApi.find_robot(except, function(id) {
+      addPlayer({"id" : id}, function(np) {
         np.robot = true;
-        obj.think_time = rand(think_table);
-        console.log(new Date() + `: Robot player ${np.nick} (${np.id}), ${np.country}, ${np.wins}/${np.games} (${np.record}) joined with think time: ${obj.think_time}`);
+        obj.thinkTime = rand(thinkTable);
+        console.log(new Date() + `: Robot player ${np.nick} (${np.id}), ${np.country}, ${np.wins}/${np.games} (${np.record}) joined with think time: ${obj.thinkTime}`);
         obj.player = np;
 
-        obj.init_modes(obj);
+        obj.initModes(obj);
         obj.mode = obj.modes[0];
-        obj.current_action = obj.choose_action;
+        obj.currentAction = obj.chooseAction;
       });
     });
   },
 
-  no_action : function(){
-    this.current_action = this.choose_action;
+  noAction : function(){
+    this.currentAction = this.chooseAction;
   },
 
-  filter_distance : function(gl, from, r) {
+  filterDistance : function(gl, from, r) {
     let ww = gl;
-    let filterx = ww.filter( g => { return (Math.abs(g.x - from.x) < (r ? r : grid_x)) });
+    let filterx = ww.filter( g => { return (Math.abs(g.x - from.x) < (r ? r : gridX)) });
     if (filterx.length > 0) ww = filterx;
 
-    let filterz = ww.filter( g => { return (Math.abs(g.z - from.z) < (r ? r : grid_x)) });
+    let filterz = ww.filter( g => { return (Math.abs(g.z - from.z) < (r ? r : gridX)) });
     if (filterz.length > 0) ww = filterz;
     return ww;
   },
 
-  get_grid_us : function(from, r) {
-    let w = this.ai_settings[this.player.roomid].weight; //(this.player.roomid * -2.0) + 1.0;
-    return this.get_grid(w, from ,r);
+  getGridUs : function(from, r) {
+    let w = this.aiSettings[this.player.roomid].weight; //(this.player.roomid * -2.0) + 1.0;
+    return this.getGrid(w, from ,r);
   },
 
-  get_grid_them : function(from, r) {
-    let w = this.ai_settings[this.player.roomid].enemy_weight; //(this.player.roomid * 2.0) - 1.0;
-    return this.get_grid(w, from ,r);
+  getGridThem : function(from, r) {
+    let w = this.aiSettings[this.player.roomid].enemyWeight; //(this.player.roomid * 2.0) - 1.0;
+    return this.getGrid(w, from ,r);
   },
 
-  get_grid : function(w, from, r) {
+  getGrid : function(w, from, r) {
       let ww = gridweights.filter( g => { return g.w === w  });
       if (ww.length > 0) {
-        if (from) ww = this.filter_distance(ww, from, r);
+        if (from) ww = this.filterDistance(ww, from, r);
         return rand(ww);
     }
   },
 
-  get_grid_w : function(w, filter) {
+  getGridW : function(w, filter) {
       let ww = gridweights.filter( g => { return g.w === w  });
       if (ww.length > 0) {
         if (filter) ww = filter(ww);
@@ -172,8 +172,8 @@ Ai.prototype = {
     }
   },
 
-  get_grid_from_rows : function(w, sr, er) {
-      let wc = this.get_grid_w(w, function(grids) {
+  getGridFromRows : function(w, sr, er) {
+      let wc = this.getGridW(w, function(grids) {
           return grids.filter( g => {
             return (g.z >= sr && g.z <= er);
           });
@@ -182,28 +182,28 @@ Ai.prototype = {
    },
 
   consolidate : function() {
-    let us1 = this.get_grid_us();
-    let us2 = this.get_grid_us(us1, 2);
+    let us1 = this.getGridUs();
+    let us2 = this.getGridUs(us1, 2);
     if (us1 && us2) this.order(us2, us1);
-    this.current_action = this.choose_action;
+    this.currentAction = this.chooseAction;
   },
 
   merge : function(){
-      let us = this.get_grid_us();
+      let us = this.getGridUs();
       for (var i = 0; i < this.around.length; i++) {
         if (us) this.order({ "x" : us.x + this.around[i][0], "z" : us.z + this.around[i][1] }, us);
       }
-    this.current_action = this.choose_action;
+    this.currentAction = this.chooseAction;
   },
 
   attack : function(){
     let us, them = null;
-    let set = this.ai_settings[this.player.roomid];
-    them = this.get_grid_from_rows(set.enemy_weight, set.enemy_startrow, set.enemy_startrowend);
-    us = this.get_grid_from_rows(set.weight, set.startrow, set.startrowend);
+    let set = this.aiSettings[this.player.roomid];
+    them = this.getGridFromRows(set.enemyWeight, set.enemyStartRow, set.enemyStartRowend);
+    us   = this.getGridFromRows(set.weight, set.startrow, set.startrowend);
     if (!(us && them)) {
-      us = this.get_grid_us();
-      them = this.get_grid_them(us, 3);
+      us = this.getGridUs();
+      them = this.getGridThem(us, 3);
     }
     if (us && them) {
         this.order(us, them);
@@ -219,14 +219,14 @@ Ai.prototype = {
           this.order({ "x" : us.x, "z" : us.z + zz }, them);
         }
     }
-    this.current_action = this.choose_action;
+    this.currentAction = this.chooseAction;
   },
 
   think : function(dt) {
     this.wait += dt;
-    if (this.wait > this.think_time) {
+    if (this.wait > this.thinkTime) {
       this.wait = 0;
-      this.current_action(dt);
+      this.currentAction(dt);
     }
   },
 }
