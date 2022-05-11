@@ -251,7 +251,7 @@ global.isoCountries = {
 
 module.exports = {
 
-  restApiRoot : "https://pixel-wars.com/wp-json",
+  restApiRoot : "",
   restApiExtended : "/extended/robot/",
   auth : { 'Authorization': 'Basic ' + b64.encode(process.env.ADMIN_KEY),
            'Content-Type': 'application/json'
